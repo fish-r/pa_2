@@ -154,7 +154,7 @@ int shell_exit(char **args)
  */
 int process_command(char **args)
 {
-  int child_exit_status = -1;
+  int child_exit_status;
   /** TASK 3 **/
 
   // 1. Check if args[0] is NULL. If it is, an empty command is entered, return 1
@@ -168,33 +168,62 @@ int process_command(char **args)
 
   if (args[0] == NULL)
   {
+    // empty command entered
     return 1;
   }
-  else if (strcmp(args[0], "cd") == 0 || strcmp(args[0], "help") == 0 || strcmp(args[0], "exit") == 0 || strcmp(args[0], "usage") == 0)
+  // check against existing commands, call their functions
+  else if (strcmp(args[0], "cd") == 0)
   {
-    system(args[0]);
-    return 1;
+    shell_cd(args);
+    return 0;
   }
-  // else if (strcmp(args[0], "cd"))
-  // {
-  //   chdir(args[1]);
-  //   return 1;
-  // }
+
+  else if (strcmp(args[0], "help") == 0)
+  {
+    shell_help(args);
+    return 0;
+  }
+
+  else if (strcmp(args[0], "exit") == 0)
+  {
+    shell_exit(args);
+    return 0;
+  }
+
+  else if (strcmp(args[0], "usage") == 0)
+  {
+    shell_usage(args);
+    return 0;
+  }
+
   else
   {
     int child = fork();
+    // check if fork successful
     if (child == -1)
     {
       perror("Fork unsuccessful");
       exit(1);
     }
+    // fork successful
     else if (child == 0)
     {
       exec_sys_prog(args);
     }
+    // wait for child id
     else
     {
-      waitpid(child, &child_exit_status, WUNTRACED);
+
+      if (child > 0)
+      {
+        int status;
+        waitpid(child, &status, WUNTRACED);
+        // if child terminates properly, WIFEXITED(status) returns TRUE
+        if (WIFEXITED(status))
+        {
+          child_exit_status = WEXITSTATUS(status);
+        }
+      }
     }
   }
 
@@ -261,6 +290,7 @@ char **tokenize_line_stdin(char *line)
     tokens[position] = token;
     token = strtok(NULL, delimit);
     position++;
+    current_number_tokens++;
   }
 
   return tokens;
