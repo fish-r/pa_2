@@ -174,26 +174,22 @@ int process_command(char **args)
   // check against existing commands, call their functions
   else if (strcmp(args[0], "cd") == 0)
   {
-    shell_cd(args);
-    return 0;
+    return shell_cd(args);
   }
 
   else if (strcmp(args[0], "help") == 0)
   {
-    shell_help(args);
-    return 0;
+    return shell_help(args);
   }
 
   else if (strcmp(args[0], "exit") == 0)
   {
-    shell_exit(args);
-    return 0;
+    return shell_exit(args);
   }
 
   else if (strcmp(args[0], "usage") == 0)
   {
-    shell_usage(args);
-    return 0;
+    return shell_usage(args);
   }
 
   else
@@ -208,21 +204,18 @@ int process_command(char **args)
     // fork successful
     else if (child == 0)
     {
-      exec_sys_prog(args);
+      return exec_sys_prog(args);
     }
     // wait for child id
+
     else
     {
-
-      if (child > 0)
+      int status;
+      waitpid(child, &status, WUNTRACED);
+      // if child terminates properly, WIFEXITED(status) returns TRUE
+      if (WIFEXITED(status))
       {
-        int status;
-        waitpid(child, &status, WUNTRACED);
-        // if child terminates properly, WIFEXITED(status) returns TRUE
-        if (WIFEXITED(status))
-        {
-          child_exit_status = WEXITSTATUS(status);
-        }
+        child_exit_status = WEXITSTATUS(status);
       }
     }
   }
@@ -277,6 +270,8 @@ char **tokenize_line_stdin(char *line)
   // 3. Store the address to first letter of each word in the command in tokens
   // DO NOT PRINT ANYTHING TO THE OUTPUT
 
+  current_number_tokens = 0;
+
   if (tokens == NULL)
   {
     perror("Unable to allocate memory");
@@ -303,9 +298,9 @@ char **tokenize_line_stdin(char *line)
 void main_loop(void)
 {
   // instantiate local variables
-  char *line;  // to accept the line of string from user
-  char **args; // to tokenize them as arguments separated by spaces
-  int status;  // if status == 1, prompt new user input. else, terminate the shell program.
+  char *line;     // to accept the line of string from user
+  char **args;    // to tokenize them as arguments separated by spaces
+  int status = 1; // if status == 1, prompt new user input. else, terminate the shell program.
 
   /** TASK 4 **/
   // write a loop where you do the following:
@@ -336,45 +331,33 @@ void main_loop(void)
     fflush(stdout); // clear the buffer and move the output to the console using fflush
 
     /***** BEGIN ANSWER HERE *****/
-    status = shell_exit(args); // remove this line when you work on this task
+    // status = shell_exit(args); // remove this line when you work on this task
+    // int exit_status;
+    // do
+    // {
+    line = read_line_stdin();
+    args = tokenize_line_stdin(line);
+    int statu = process_command(args);
+
+    // free memory
+    free(line);
+    line = NULL;
+    free(args);
+    args = NULL;
+
+    if (statu != 1)
+    {
+      break;
+    }
 
     /*********************/
   } while (status);
 }
 
-// int main(int argc, char **argv)
-// {
-
-//   printf("CSEShell Run successful. Running now: \n");
-
-//   // Setup path
-//   if (getcwd(output_file_path, sizeof(output_file_path)) != NULL)
-//   {
-//     printf("Current working dir: %s\n", output_file_path);
-//   }
-//   else
-//   {
-//     perror("getcwd() error, exiting now.");
-//     return 1;
-//   }
-
-//   // Run command loop
-//   main_loop();
-
-//   return 0;
-// }
-
 int main(int argc, char **argv)
 {
 
-  printf("Shell Run successful. Running now: \n");
-
-  char *line = read_line_stdin();
-  printf("The fetched line is : %s \n", line);
-
-  char **args = tokenize_line_stdin(line);
-  printf("The first token is %s \n", args[0]);
-  printf("The second token is %s \n", args[1]);
+  printf("CSEShell Run successful. Running now: \n");
 
   // Setup path
   if (getcwd(output_file_path, sizeof(output_file_path)) != NULL)
@@ -386,7 +369,37 @@ int main(int argc, char **argv)
     perror("getcwd() error, exiting now.");
     return 1;
   }
-  process_command(args);
+
+  // Run command loop
+  main_loop();
 
   return 0;
 }
+
+// task 3 test case
+// int main(int argc, char **argv)
+// {
+
+//   printf("Shell Run successful. Running now: \n");
+
+//   char *line = read_line_stdin();
+//   printf("The fetched line is : %s \n", line);
+
+//   char **args = tokenize_line_stdin(line);
+//   printf("The first token is %s \n", args[0]);
+//   printf("The second token is %s \n", args[1]);
+
+//   // Setup path
+//   if (getcwd(output_file_path, sizeof(output_file_path)) != NULL)
+//   {
+//     printf("Current working dir: %s\n", output_file_path);
+//   }
+//   else
+//   {
+//     perror("getcwd() error, exiting now.");
+//     return 1;
+//   }
+//   process_command(args);
+
+//   return 0;
+// }
