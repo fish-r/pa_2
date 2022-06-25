@@ -28,6 +28,15 @@ int execute()
    // DO NOT PRINT ANYTHING TO THE OUTPUT
 
    /***** BEGIN ANSWER HERE *****/
+   fptr = fopen("output.txt", "r");
+   char *line = NULL;
+   size_t len = 0;
+   ssize_t read;
+
+   while (getline(&line, &len, fptr) != -1)
+   {
+      live_daemons++;
+   }
 
    /*********************/
    if (live_daemons == 0)
