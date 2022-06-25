@@ -27,6 +27,41 @@ static int create_daemon()
     // DO NOT PRINT ANYTHING TO THE OUTPUT
     /***** BEGIN ANSWER HERE *****/
 
+    int process = fork();
+    // this is parent
+    if (process > 0)
+    {
+        exit(1);
+    }
+    // this is child process
+    else if (process == 0)
+    {
+        // call setsid
+        setsid();
+        int daemon_child = fork();
+        if (daemon_child > 0)
+        {
+            exit(1);
+        }
+        else if (daemon_child == 0)
+        {
+            umask(0);
+            chdir("/");
+            /* Close all open file descriptors */
+            int x;
+            for (x = sysconf(_SC_OPEN_MAX); x >= 0; x--)
+            {
+                close(x);
+            }
+
+            /*
+             * Attach file descriptors 0, 1, and 2 to /dev/null. */
+            int fd0 = open("/dev/null", O_RDWR);
+            int fd1 = dup(0);
+            int fd2 = dup(0);
+        }
+    }
+
     /*********************/
 
     return 0;
