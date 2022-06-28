@@ -202,7 +202,7 @@ int process_command(char **args)
     // fork successful
     else if (child == 0)
     {
-      return exec_sys_prog(args);
+      child_exit_status = exec_sys_prog(args);
     }
     // wait for child id
 
@@ -215,6 +215,7 @@ int process_command(char **args)
       {
         child_exit_status = WEXITSTATUS(status);
       }
+      return child_exit_status;
     }
   }
 
@@ -282,6 +283,7 @@ char **tokenize_line_stdin(char *line)
     position++;
     current_number_tokens++;
   }
+  tokens[current_number_tokens] = NULL;
 
   return tokens;
 }
@@ -293,9 +295,9 @@ char **tokenize_line_stdin(char *line)
 void main_loop(void)
 {
   // instantiate local variables
-  char *line;     // to accept the line of string from user
-  char **args;    // to tokenize them as arguments separated by spaces
-  int status = 1; // if status == 1, prompt new user input. else, terminate the shell program.
+  char *line;  // to accept the line of string from user
+  char **args; // to tokenize them as arguments separated by spaces
+  int status;  // if status == 1, prompt new user input. else, terminate the shell program.
 
   /** TASK 4 **/
   // write a loop where you do the following:
@@ -330,13 +332,11 @@ void main_loop(void)
 
     line = read_line_stdin();
     args = tokenize_line_stdin(line);
-    int statu = process_command(args);
+    status = process_command(args);
 
     // free memory
     free(line);
-    line = NULL;
     free(args);
-    args = NULL;
 
     /*********************/
   } while (status);
