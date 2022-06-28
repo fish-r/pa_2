@@ -241,12 +241,13 @@ char *read_line_stdin(void)
   // will store user input onto the memory location allocated in (1)
   // 3. Return the char*
   // DO NOT PRINT ANYTHING TO THE OUTPUT
-  if (line != NULL)
+  if (line == NULL)
   {
-    getline(&line, &buf_size, stdin);
-
-    return line;
+    exit(1);
   }
+  getline(&line, &buf_size, stdin);
+
+  return line;
 }
 
 /**
