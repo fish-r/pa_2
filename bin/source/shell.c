@@ -198,7 +198,7 @@ int process_command(char **args)
     // check if fork successful
     if (child == -1)
     {
-      perror("Fork unsuccessful");
+      // perror("Fork unsuccessful");
       exit(1);
     }
     // fork successful
@@ -241,15 +241,12 @@ char *read_line_stdin(void)
   // will store user input onto the memory location allocated in (1)
   // 3. Return the char*
   // DO NOT PRINT ANYTHING TO THE OUTPUT
-  if (line == NULL)
+  if (line != NULL)
   {
-    perror("Unable to allocate memory");
-    exit(1);
+    getline(&line, &buf_size, stdin);
+
+    return line;
   }
-
-  getline(&line, &buf_size, stdin);
-
-  return line;
 }
 
 /**
@@ -274,7 +271,7 @@ char **tokenize_line_stdin(char *line)
 
   if (tokens == NULL)
   {
-    perror("Unable to allocate memory");
+    // perror("Unable to allocate memory");
     exit(1);
   }
   char delimit[] = " \t\r\n\v\f";
