@@ -8,4 +8,4 @@ listdir
 listdirall
 summond
 cseshell
-logfile.txt
+logfile.txt.DS_Store
