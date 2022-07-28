@@ -1,4 +1,0 @@
-  501 23994     1   0  3:55PM ??         0:00.00 summond          yufangoh         23993      0    0 S      ?? 
-  501 24009     1   0  3:56PM ??         0:00.00 summond          yufangoh         24008      0    0 S      ?? 
-  501 24017     1   0  3:56PM ??         0:00.00 summond          yufangoh         24016      0    0 S      ?? 
-  501 24020     1   0  3:56PM ??         0:00.00 summond          yufangoh         24019      0    0 S      ?? 
