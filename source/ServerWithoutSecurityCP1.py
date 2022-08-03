@@ -83,23 +83,21 @@ def main(args):
                         case 1:
                             # If the packet is for transferring a chunk of the file
                             start_time = time.time()
-
-                            file_len = convert_bytes_to_int(
-                                read_bytes(client_socket, 8)
-                            )
-                            enc_file_data = read_bytes(client_socket, file_len)
-                            # print(file_data)
-
-                            # Decrypt file data
+                            final_file_data = bytearray()
                             private_key = get_private_key()
-                            dec_file_data = private_key.decrypt(
-                                enc_file_data, # in bytes
-                                padding.OAEP(      # padding should match whatever used during encryption
-                                    mgf=padding.MGF1(hashes.SHA256()),
-                                    algorithm=hashes.SHA256(),
-                                    label=None,
-                                ),
-                            )
+
+                            while True: 
+                                file_len = convert_bytes_to_int(
+                                    read_bytes(client_socket, 8)
+                                )
+                                if file_len<128:
+                                    break
+                                enc_file_data = read_bytes(client_socket, file_len)
+
+                                # print(file_data)
+                                # Decrypt file data and add to bytearray
+                                dec_file_data = private_key.decrypt(enc_file_data, padding.PKCS1v15())
+                                final_file_data += dec_file_data
 
                             filename = "recv_" + filename.split("/")[-1]
 
@@ -107,7 +105,7 @@ def main(args):
                             with open(
                                 f"recv_files/{filename}", mode="wb"
                             ) as fp:
-                                fp.write(dec_file_data)
+                                fp.write(final_file_data)
                             print(
                                 f"Finished receiving file in {(time.time() - start_time)}s!"
                             )

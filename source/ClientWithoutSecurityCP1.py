@@ -97,7 +97,7 @@ def check_server_id(s, start_time):
             ),
             hashes.SHA256(),
         )
-        print(f"Authentication Protocol complete in {time.time()-start_time}s!")
+        print(f"Authentication Protocol complete!")
 
         return server_public_key
 
@@ -129,14 +129,15 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((server_address, port))
         print("Connected")
+        auth_request(s)
+        server_public_key = check_server_id(s,start_time)
+        if not server_public_key:
+            # Close the connection
+            s.sendall(convert_int_to_bytes(2))
+            print("Closing connection...")
 
         while True:
             # authentication protocol
-            auth_request(s)
-            server_public_key = check_server_id(s,start_time)
-            if not server_public_key:
-                break
-            
             filename = input(
                 "Enter a filename to send (enter -1 to exit):"
             ).strip()
@@ -155,22 +156,19 @@ def main(args):
             s.sendall(filename_bytes)
 
             # Send the file
+            s.sendall(convert_int_to_bytes(1))
             with open(filename, mode="rb") as fp:
-                data = fp.read()
+                print("Sending file chunks...")
+                while True:
+                    data = fp.read(117)
+                    if not data:
+                        break
+                    # Encrypt the file contents
+                    enc_data = server_public_key.encrypt(data, padding.PKCS1v15())
+                    s.sendall(convert_int_to_bytes(len(enc_data)))
+                    s.sendall(enc_data)
                 s.sendall(convert_int_to_bytes(1))
-
-                # Encrypt the file contents
-                enc_data = server_public_key.encrypt(
-                    data,
-                    padding.OAEP(
-                        mgf=padding.MGF1(hashes.SHA256()),
-                        algorithm=hashes.SHA256(),
-                        label=None,
-                    ),
-                )
-
-                s.sendall(convert_int_to_bytes(len(enc_data)))
-                s.sendall(enc_data)
+                print("File sent successfully!")    
 
         # Close the connection
         s.sendall(convert_int_to_bytes(2))
