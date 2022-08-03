@@ -47,29 +47,46 @@ def get_ca_public_key():
     f = open("auth/cacsertificate.crt", "rb")
     ca_cert_raw = f.read()
     ca_cert = x509.load_pem_x509_certificate(
-    data=ca_cert_raw, backend=default_backend()
+        data=ca_cert_raw, backend=default_backend()
     )
     ca_public_key = ca_cert.public_key()
     return ca_public_key
 
-def check_server_id(s):
+def check_server_id(s,start_time):
     print("Verifying Server ID...")
     # ca public key for verifying the digest later
-    # the CA's certificate is its public key: cacsertificate
     ca_public_key = get_ca_public_key()
     #original message
     message = "Client Request SecureStore ID"
-    message_bytes = bytes(message, encoding="utf8")
-
     digest_len = convert_bytes_to_int(
-        read_bytes(s, 8)
-    )
+            read_bytes(s, 8)
+        )
     digest = read_bytes(s, digest_len)
+    message_bytes = bytes(message, encoding="utf8")
+    server_signed_len = convert_bytes_to_int(
+            read_bytes(s, 8)
+        )
+    server_cert_raw = read_bytes(s, server_signed_len)
 
     try:
-        print("Verifying Signed Digest...")
-        # 1. Verify signed digest with ca cert
+        # 1. Verify server certificate with ca cert
+   
+        server_cert = x509.load_pem_x509_certificate(
+            data=server_cert_raw, backend=default_backend()
+        )
         ca_public_key.verify(
+            signature=server_cert.signature, # signature bytes to  verify
+            data=server_cert.tbs_certificate_bytes, # certificate data bytes that was signed by CA
+            padding=padding.PKCS1v15(), # padding used by CA bot to sign the the server's csr
+            algorithm=server_cert.signature_hash_algorithm,
+        )
+
+        assert server_cert.not_valid_before <= datetime.utcnow() <= server_cert.not_valid_after
+
+        # 2. Verify signed digest with public key from server cert
+       
+        server_public_key = server_cert.public_key()
+        server_public_key.verify(
             digest,
             message_bytes,
             padding.PSS(
@@ -78,36 +95,18 @@ def check_server_id(s):
             ),
             hashes.SHA256(),
         )
-        server_signed_len = convert_bytes_to_int(
-        read_bytes(s, 8)
-        )
-        server_cert_raw = read_bytes(s, server_signed_len)
+        print(f"Authentication Protocol complete in {time.time()-start_time}s!")
 
-        # 2. Verify server certificate with ca cert
-        print("Verifying Server Certificate...")
-        server_cert = x509.load_pem_x509_certificate(
-        data=server_cert_raw, backend=default_backend()
-        )
-        ca_public_key.verify(
-            signature=server_cert.signature, # signature bytes to  verify
-            data=server_cert.tbs_certificate_bytes, # certificate data bytes that was signed by CA
-            padding=padding.PKCS1v15(), # padding used by CA bot to sign the the server's csr
-            algorithm=server_cert.signature_hash_algorithm,
-        )
-        
-        assert server_cert.not_valid_before <= datetime.utcnow() <= server_cert.not_valid_after
         return True
 
-    except Exception as e:
+    except InvalidSignature as e:
         print(e)
         print("ERROR: INVALID SIGNATURE")
         return False
         
 
-
-
 def auth_request(s):
-    print("Sending auth request...")
+    print("Sending Authentication Request...")
     message = "Client Request SecureStore ID"
     # send mode 3, then send message length and message itself
     message_bytes = bytes(message, encoding="utf8")
@@ -132,7 +131,7 @@ def main(args):
         while True:
             # authentication protocol
             auth_request(s)
-            if not check_server_id(s):
+            if not check_server_id(s,start_time):
                 break
             
             filename = input(

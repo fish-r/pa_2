@@ -115,10 +115,8 @@ def main(args):
                                 read_bytes(client_socket, 8)
                             )
                             message = read_bytes(client_socket, msg_len)
-                            print (f"Received message: {message}")
 
                             # 2. Sign message digest and send back to client
-                            print("Sending Signed Message Digest...")
                             private_key = get_private_key()
                             signature = private_key.sign(
                                     message, # message in bytes format
@@ -130,10 +128,8 @@ def main(args):
                                 )
                             client_socket.sendall(convert_int_to_bytes(len(signature)))
                             client_socket.sendall(signature)
-                            print("Sent signed message digest!")
 
                             # Send the signed CSR to client
-                            print("Sending raw server certificate...")
                             cert = "auth/server_signed.crt"
                             f = open("auth/server_signed.crt", "rb")
                             server_cert_raw = f.read()
@@ -141,7 +137,7 @@ def main(args):
                             # server_cert_raw_bytes = bytes(server_cert_raw, encoding="utf8")
                             client_socket.sendall(server_cert_raw)
                             print(
-                                f"Sent digest and certificate in  {(time.time() - start_time)}s!"
+                                f"Message Digest and Signed Certificate sent!"
                             )
 
 
