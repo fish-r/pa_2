@@ -95,7 +95,7 @@ def check_server_id(s,start_time):
             ),
             hashes.SHA256(),
         )
-        print(f"Authentication Protocol complete in {time.time()-start_time}s!")
+        print(f"Authentication Protocol Complete!")
 
         return True
 
@@ -127,13 +127,14 @@ def main(args):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((server_address, port))
         print("Connected")
-
-        while True:
-            # authentication protocol
-            auth_request(s)
-            if not check_server_id(s,start_time):
-                break
+        # authentication protocol
+        auth_request(s)
+        if not check_server_id(s,start_time):
+            # Close the connection
+            s.sendall(convert_int_to_bytes(2))
+            print("Closing connection...")
             
+        while True:
             filename = input(
                 "Enter a filename to send (enter -1 to exit):"
             ).strip()
