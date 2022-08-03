@@ -57,7 +57,7 @@ def save_enc_file(filename, enc_file_data,start_time):
 
 def get_private_key():
     try:
-        with open("auth/_private_key.pem", mode="r", encoding="utf8") as key_file:
+        with open("auth/server_private_key.pem", mode="r", encoding="utf8") as key_file:
             private_key = serialization.load_pem_private_key(
                 bytes(key_file.read(), encoding="utf8"), password=None
             )
