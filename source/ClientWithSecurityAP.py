@@ -52,12 +52,10 @@ def get_ca_public_key():
     ca_public_key = ca_cert.public_key()
     return ca_public_key
 
-def check_server_id(s,start_time):
+def check_server_id(s,message):
     print("Verifying Server ID...")
     # ca public key for verifying the digest later
     ca_public_key = get_ca_public_key()
-    #original message
-    message = "Client Request SecureStore ID"
     digest_len = convert_bytes_to_int(
             read_bytes(s, 8)
         )
@@ -105,9 +103,8 @@ def check_server_id(s,start_time):
         return False
         
 
-def auth_request(s):
+def auth_request(s, message):
     print("Sending Authentication Request...")
-    message = "Client Request SecureStore ID"
     # send mode 3, then send message length and message itself
     message_bytes = bytes(message, encoding="utf8")
 
@@ -128,8 +125,9 @@ def main(args):
         s.connect((server_address, port))
         print("Connected")
         # authentication protocol
-        auth_request(s)
-        if not check_server_id(s,start_time):
+        auth_message = secrets.token_urlsafe()
+        auth_request(s,auth_message)
+        if not check_server_id(s,auth_message):
             # Close the connection
             s.sendall(convert_int_to_bytes(2))
             print("Closing connection...")
